@@ -11,7 +11,8 @@ def make_spiral(points):
         points.sort(key=lambda p: p.x)  # sort points from left to right
         remaining_points = []
 
-        if len(points) < 4:
+        if len(points) < 3:
+            print(str(len(points)) + 'remaining' + str(points))
             res.add_vertices(points, False)
             points = []
         else:
@@ -59,88 +60,88 @@ def make_spiral_precise(points):
     points.sort(key=lambda p: p.x)
     while isinstance(points, list):
 
-        if len(points) == 1:
-            res.add_vertex(points)
-        if len(points) == 2:
-            print('<3 remaining : ' + str(points))
-
-            if points[0] not in res.vertices and points[1] not in res.vertices:
-                res.add_vertices(points, False)
-            elif points[0] not in res.vertices:
-                res.add_vertex(points[0])
-            else:
-                res.add_vertex(points[1])
+        if len(points) < 3:
+            res.add_vertices(points)
             points = None
         else:
-            us = make_upper_spiral(points)
-            upper_spiral = us[0]
+            us = make_half_spiral(points, upper=True)
             remaining_points = us[1]
 
             # Prevent duplicated vertices
             if len(res) > 0:
                 res.vertices.extend(us[0].vertices[1:])
             else:
-                res.vertices.extend(us[0].vertices)
+                res.vertices = us[0].vertices
 
-            if len(us[1]) > 3:
-                ls = make_lower_spiral(remaining_points)
+            if len(us[1]) > 2:
+                ls = make_half_spiral(remaining_points, upper=False)
                 remaining_points = ls[1]
                 res.vertices.extend(ls[0].vertices[1:]) # prevent duplicated vertices
-
             points = remaining_points
-
-
-    upper_text = "US=["
-    for p in upper_spiral.vertices:
-        upper_text += p.get_name() + ", "
-    upper_text += "]"
-
-    lower_text = "US=["
-    for p in lower_spiral.vertices:
-        lower_text += p.get_name() + ", "
-    lower_text += "]"
 
     return res
 
 
 # build the upper hull
-def make_upper_spiral(points):
-    points.sort(key=lambda p: p.x)
+def make_half_spiral(points, upper=True):
     spiral_points = MyLine()
     remaining_points = []
 
-    spiral_points.add_vertex(points[0], False)
-    spiral_points.add_vertex(points[1], False)
+    if upper:
+        points.sort(key=lambda p: p.x)
+    else:
+        points.sort(key=lambda p: -p.x)
 
-    for p in points[2:]:
-        while len(spiral_points) >= 2 and p.pt_pos(spiral_points.vertices[-2], spiral_points.vertices[-1]) != LEFT:
-            remaining_points.append(spiral_points.vertices[-1])
-            spiral_points.vertices = spiral_points.vertices[:-1]
+    print(points)
 
-        spiral_points.add_vertex(p, False)
+    if len(points) > 3:
+        spiral_points.add_vertex(points[0], False)
+        spiral_points.add_vertex(points[1], False)
 
-    remaining_points.append(p)
+        for p in points[2:]:
+            while len(spiral_points) >= 2 and p.pt_pos(spiral_points.vertices[-2], spiral_points.vertices[-1]) != LEFT:
+                    remaining_points.append(spiral_points.vertices[-1])
+                    spiral_points.vertices = spiral_points.vertices[:-1]
+            spiral_points.add_vertex(p, False)
+
+        remaining_points.append(p)
+
+    else:
+        print('3 points method')
+        if points[2].pt_pos(points[0], points[1]) == LEFT:
+            print([points[0], points[1]])
+            spiral_points.vertices = [points[0], points[1]]
+            remaining_points.append(points[2])
+        elif points[2].pt_pos(points[0], points[1]) != LEFT:
+            print([points[0], points[2]])
+            spiral_points.vertices = [points[0], points[2]]
+            remaining_points.append(points[1])
+
+    print(spiral_points)
+    print(remaining_points)
+
     return [spiral_points, remaining_points]
 
-
-# build the lower hull
-def make_lower_spiral(points):
-    points.sort(key=lambda p: p.x)
-    spiral_points = MyLine()  # the lower hull
-    remaining_points = []
-    spiral_points.add_vertex(points[-1], False)
-    spiral_points.add_vertex(points[-2], False)  # second-last element
-    points = reversed(points[:-2])
-
-    for p in points:
-        while len(spiral_points) >= 2 and p.pt_pos(spiral_points.vertices[-2], spiral_points.vertices[-1]) != LEFT:
-            remaining_points.append(spiral_points.vertices[-1])
-            spiral_points.vertices = spiral_points.vertices[:-1]
-
-        spiral_points.add_vertex(p, False)
-
-    # Last point of LS is starting point of nex US
-    remaining_points.append(p)
-
-    return [spiral_points, remaining_points]
+#
+# # build the lower hull
+# def make_lower_spiral(points):
+#     points.sort(key=lambda p: p.x)
+#     spiral_points = MyLine()  # the lower hull
+#     remaining_points = []
+#     spiral_points.add_vertex(points[-1], False)
+#     spiral_points.add_vertex(points[-2], False)  # second-last element
+#     points = reversed(points[:-2])
+#
+#     for p in points:
+#         while len(spiral_points) >= 2 and p.pt_pos(spiral_points.vertices[-2], spiral_points.vertices[-1]) != LEFT:
+#             remaining_points.append(spiral_points.vertices[-1])
+#             spiral_points.vertices = spiral_points.vertices[:-1]
+#
+#         spiral_points.add_vertex(p, False)
+#
+#     # Last point of LS is starting point of next US
+#     remaining_points.append(p)
+#     print(' last remaining point ' + str(p))
+#
+#     return [spiral_points, remaining_points]
 
